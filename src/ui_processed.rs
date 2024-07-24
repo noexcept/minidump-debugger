@@ -125,6 +125,12 @@ impl MyApp {
             .get(self.processed_ui_state.cur_thread)
             .map(crate::threadname)
             .unwrap_or_default();
+
+        let is_main_thread = self.processed_ui_state.cur_thread == 0;
+        let is_crash_thread = self.processed_ui_state.cur_thread == state.requesting_thread.unwrap_or_default();
+        let cur_threadname = cur_threadname + if is_main_thread { "*" } else { "" };
+        let cur_threadname = cur_threadname + if is_crash_thread { "#" } else { "" };
+
         egui::SidePanel::left("overall info")
             .default_width((ui.available_width() / 2.0).round())
             .frame(Frame::none())
@@ -169,10 +175,10 @@ impl MyApp {
                             (
                                 "Crash Address".to_owned(),
                                 state
-                                .exception_info
-                                .as_ref()
-                                .map(|e| self.format_addr(e.address.0))
-                                .unwrap_or_default(),
+                                    .exception_info
+                                    .as_ref()
+                                    .map(|e| self.format_addr(e.address.0))
+                                    .unwrap_or_default(),
                             ),
                             ("Crashing Thread".to_owned(), cur_threadname.clone()),
                         ],
@@ -191,15 +197,19 @@ impl MyApp {
                                 .threads
                                 .get(self.processed_ui_state.cur_thread)
                                 .map(crate::threadname)
-                                .unwrap_or_default(),
+                                .unwrap_or_default() + if self.processed_ui_state.cur_thread == 0 { "*" } else { "" }
+                                + if self.processed_ui_state.cur_thread == state.requesting_thread.unwrap_or_default() { "#" } else { "" }
                         )
                         .show_ui(ui, |ui| {
                             for (idx, stack) in state.threads.iter().enumerate() {
+                                let is_main_thread = idx == 0;
+                                let is_crash_thread = idx == state.requesting_thread.unwrap_or_default();
                                 if ui
                                     .selectable_value(
                                         &mut self.processed_ui_state.cur_thread,
                                         idx,
-                                        crate::threadname(stack),
+                                        crate::threadname(stack) + if is_main_thread { "*" } else { "" }
+                                            + if is_crash_thread { "#" } else { "" },
                                     )
                                     .changed()
                                 {
