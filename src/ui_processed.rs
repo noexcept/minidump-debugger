@@ -14,6 +14,9 @@ pub struct ProcessedUiState {
     pub cur_frame: usize,
 }
 
+const MAIN_THREAD_MARK: &str = " [main]";
+const CRASHING_THREAD_MARK: &str = " [crash]";
+
 use inline_shim::*;
 #[cfg(feature = "inline")]
 mod inline_shim {
@@ -128,8 +131,8 @@ impl MyApp {
 
         let is_main_thread = self.processed_ui_state.cur_thread == 0;
         let is_crash_thread = self.processed_ui_state.cur_thread == state.requesting_thread.unwrap_or_default();
-        let cur_threadname = cur_threadname + if is_main_thread { "*" } else { "" };
-        let cur_threadname = cur_threadname + if is_crash_thread { "#" } else { "" };
+        let cur_threadname = cur_threadname + if is_main_thread { MAIN_THREAD_MARK } else { "" };
+        let cur_threadname = cur_threadname + if is_crash_thread { CRASHING_THREAD_MARK } else { "" };
 
         egui::SidePanel::left("overall info")
             .default_width((ui.available_width() / 2.0).round())
@@ -197,8 +200,8 @@ impl MyApp {
                                 .threads
                                 .get(self.processed_ui_state.cur_thread)
                                 .map(crate::threadname)
-                                .unwrap_or_default() + if self.processed_ui_state.cur_thread == 0 { "*" } else { "" }
-                                + if self.processed_ui_state.cur_thread == state.requesting_thread.unwrap_or_default() { "#" } else { "" }
+                                .unwrap_or_default() + if self.processed_ui_state.cur_thread == 0 { MAIN_THREAD_MARK } else { "" }
+                                + if self.processed_ui_state.cur_thread == state.requesting_thread.unwrap_or_default() { CRASHING_THREAD_MARK } else { "" }
                         )
                         .show_ui(ui, |ui| {
                             for (idx, stack) in state.threads.iter().enumerate() {
@@ -208,8 +211,8 @@ impl MyApp {
                                     .selectable_value(
                                         &mut self.processed_ui_state.cur_thread,
                                         idx,
-                                        crate::threadname(stack) + if is_main_thread { "*" } else { "" }
-                                            + if is_crash_thread { "#" } else { "" },
+                                        crate::threadname(stack) + if is_main_thread { MAIN_THREAD_MARK } else { "" }
+                                            + if is_crash_thread { CRASHING_THREAD_MARK } else { "" },
                                     )
                                     .changed()
                                 {
